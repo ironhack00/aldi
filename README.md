@@ -126,7 +126,30 @@ Si no tenés Postgres instalado, con Docker:
 ```bash
 docker run -d --name desvios-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=desvios \
   -p 5432:5432 postgres:16-alpine
-# DATABASE_URL="postgresql://postgres:dev@localhost:5432/desvios"
+```
+
+El `docker run` **crea** la base; el `DATABASE_URL` del `.env` le dice a la API
+**donde encontrarla**. Los valores tienen que coincidir:
+
+```
+docker run ... -e POSTGRES_PASSWORD=dev  -e POSTGRES_DB=desvios  -p 5432:5432
+                                    |                      |         |
+DATABASE_URL="postgresql://postgres:dev@localhost:5432/desvios"
+                           |
+                           usuario: "postgres" por defecto, no se configura
+```
+
+Si el puerto 5432 ya esta ocupado (por un Postgres instalado en la maquina),
+publicalo en otro y cambia el `DATABASE_URL` igual. Por ejemplo con
+`-p 55432:5432`, el `DATABASE_URL` pasa a ser `...@localhost:55432/desvios`.
+Lo de la izquierda es el puerto de tu maquina; lo de la derecha, el de adentro
+del contenedor, que siempre es 5432.
+
+Arrancar y parar la base sin perder datos:
+
+```bash
+docker stop desvios-db      # los datos quedan en el contenedor
+docker start desvios-db
 ```
 
 ### Usuarios de prueba
