@@ -129,7 +129,7 @@ docker run -d --name desvios-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=desvios 
 ```
 
 El `docker run` **crea** la base; el `DATABASE_URL` del `.env` le dice a la API
-**donde encontrarla**. Los valores tienen que coincidir:
+**dónde encontrarla**. Los valores tienen que coincidir:
 
 ```
 docker run ... -e POSTGRES_PASSWORD=dev  -e POSTGRES_DB=desvios  -p 5432:5432
@@ -139,10 +139,10 @@ DATABASE_URL="postgresql://postgres:dev@localhost:5432/desvios"
                            usuario: "postgres" por defecto, no se configura
 ```
 
-Si el puerto 5432 ya esta ocupado (por un Postgres instalado en la maquina),
-publicalo en otro y cambia el `DATABASE_URL` igual. Por ejemplo con
+Si el puerto 5432 ya está ocupado (por un Postgres instalado en la máquina),
+publicalo en otro y cambiá el `DATABASE_URL` igual. Por ejemplo con
 `-p 55432:5432`, el `DATABASE_URL` pasa a ser `...@localhost:55432/desvios`.
-Lo de la izquierda es el puerto de tu maquina; lo de la derecha, el de adentro
+Lo de la izquierda es el puerto de tu máquina; lo de la derecha, el de adentro
 del contenedor, que siempre es 5432.
 
 Arrancar y parar la base sin perder datos:
@@ -229,16 +229,16 @@ También está `apps/api/render.yaml` para crearlo como Blueprint.
 
 ## Responsive
 
-La app se usa tanto desde una PC de escritorio como desde el telefono en el
-galpon, asi que cada pantalla tiene que entrar en cualquier ancho.
+La app se usa tanto desde una PC de escritorio como desde el teléfono en el
+galpón, así que cada pantalla tiene que entrar en cualquier ancho.
 
 Dos decisiones que vale la pena conocer antes de tocar el CSS:
 
 - **El listado de registros tiene dos vistas de los mismos datos.** Abajo de
   `lg` son tarjetas apiladas (`TarjetaDesvio`), arriba es tabla. No es
-  duplicacion por descuido: las columnas son dinamicas (dependen de cuantos
-  campos marque el admin como visibles), asi que la tabla no tiene ancho
-  maximo y en un telefono el scroll horizontal esconde justo la columna que
+  duplicación por descuido: las columnas son dinámicas (dependen de cuántos
+  campos marque el admin como visibles), así que la tabla no tiene ancho
+  máximo y en un teléfono el scroll horizontal esconde justo la columna que
   importa. El criterio de formato de cada valor vive en `ValorCampo` y lo
   comparten las dos vistas.
 - **`.tarjeta` lleva `min-w-0`.** Las tarjetas casi siempre son hijas de un
@@ -254,8 +254,10 @@ npm run dev
 # y abrir http://localhost:5173/dev/responsive-check.html
 ```
 
-Vive en `apps/web/dev/` y no en `public/` a proposito: asi Vite lo sirve en
-desarrollo pero no lo copia al build de produccion.
+Vive en `apps/web/dev/` y no en `public/` a propósito: así Vite lo sirve en
+desarrollo pero no lo copia al build de producción.
+
+---
 
 ## Seguridad
 
