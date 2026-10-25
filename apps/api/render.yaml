@@ -1,0 +1,36 @@
+# Configuracion de Render (Infrastructure as Code).
+#
+# Para usarla: en Render, "New +" > "Blueprint" y apuntar a este repo.
+# Tambien se puede crear el servicio a mano con los mismos valores; en ese
+# caso lo importante son buildCommand, startCommand y las variables.
+#
+# OJO: el plan free de Render duerme el servicio tras 15 minutos sin trafico y
+# el primer request despues tarda ~30 segundos en responder. Antes de una
+# demo, abrir https://<servicio>.onrender.com/health para despertarlo.
+services:
+  - type: web
+    name: desvios-api
+    runtime: node
+    plan: free
+    region: oregon
+    # rootDir: la API vive en un subdirectorio del monorepo.
+    rootDir: apps/api
+    buildCommand: npm install && npx prisma generate && npm run build
+    # migrate deploy aplica las migraciones pendientes en cada arranque.
+    startCommand: npx prisma migrate deploy && npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # pegar la connection string de Neon / Render Postgres
+      - key: JWT_ACCESS_SECRET
+        generateValue: true # Render genera un secreto aleatorio
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false # https://<tu-proyecto>.vercel.app
+      - key: AI_PROVIDER
+        value: local
+      - key: SEED_PASSWORD
+        sync: false

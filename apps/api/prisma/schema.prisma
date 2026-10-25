@@ -1,0 +1,249 @@
+// =============================================================================
+//  Gestion inteligente de desvios - Modelo de datos
+// =============================================================================
+//  Idea central del diseno: NADA de dominio esta hardcodeado.
+//
+//  En el prototipo original las especies, actividades, problemas, causas e
+//  impactos vivian en constantes de JavaScript. Acá viven en dos tablas
+//  genericas:
+//
+//    Catalog / CatalogItem  -> las listas de valores (y sus jerarquias)
+//    FieldDefinition        -> que campos tiene el formulario de desvio
+//
+//  Un desvio, entonces, tiene solo los datos que SIEMPRE existen (fechas,
+//  codigo, autor) como columnas propias; todo lo demas se guarda en
+//  DeviationValue, una fila por campo. Agregar un campo nuevo desde el panel
+//  de administracion no requiere migracion ni deploy.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+//  Usuarios y permisos
+// -----------------------------------------------------------------------------
+
+enum Role {
+  ADMIN // administra catalogos, campos y usuarios
+  SUPERVISOR // registra y edita desvios, ve todo
+  OPERADOR // registra desvios y consulta
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(OPERADOR)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  deviations    Deviation[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+/// Refresh tokens persistidos: permite revocar una sesion sin esperar a que
+/// expire el token. Se guarda el hash, nunca el token en claro.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// -----------------------------------------------------------------------------
+//  Catalogos dinamicos
+// -----------------------------------------------------------------------------
+
+/// Una lista de valores administrable. Ej: "especies", "actividades",
+/// "problemas", "causas", "impactos".
+model Catalog {
+  id          String   @id @default(cuid())
+  /// Identificador estable usado por el codigo y la API (slug).
+  key         String   @unique
+  name        String
+  description String?
+  /// true  -> los items tienen padre/hijo (problema -> especificacion)
+  /// false -> lista plana (especies)
+  hierarchical Boolean @default(false)
+  /// Los catalogos de sistema no se pueden borrar porque hay campos que
+  /// dependen de ellos; sus items si se editan libremente.
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items  CatalogItem[]
+  fields FieldDefinition[]
+
+  @@map("catalogs")
+}
+
+/// Un valor concreto de un catalogo.
+model CatalogItem {
+  id        String  @id @default(cuid())
+  catalogId String
+  /// Para catalogos jerarquicos: el item padre (ej. "Contaminacion" es padre
+  /// de "Contaminacion de dieta").
+  parentId  String?
+  label     String
+  /// Codigo corto opcional, util para exportaciones e integraciones.
+  code      String?
+  /// Orden de aparicion en los selectores.
+  order     Int     @default(0)
+  /// Posicion dentro del flujo productivo, cuando el catalogo representa
+  /// etapas de un proceso. null = el item existe pero esta fuera del flujo
+  /// secuencial (ej. "Stock cocina"), por lo que no se le calcula distancia.
+  flowPosition Int? 
+  /// Baja logica: se oculta de los formularios nuevos pero los desvios
+  /// historicos que lo referencian siguen siendo validos.
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  catalog  Catalog           @relation(fields: [catalogId], references: [id], onDelete: Cascade)
+  parent   CatalogItem?      @relation("CatalogItemTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children CatalogItem[]     @relation("CatalogItemTree")
+  values   DeviationValue[]
+
+  @@unique([catalogId, parentId, label])
+  @@index([catalogId, order])
+  @@map("catalog_items")
+}
+
+// -----------------------------------------------------------------------------
+//  Campos dinamicos del formulario
+// -----------------------------------------------------------------------------
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT // un valor de un catalogo
+  MULTISELECT // varios valores de un catalogo
+}
+
+/// Algunos campos tienen significado para los calculos (metricas, distancia
+/// entre etapas). Ese significado se declara acá en vez de deducirlo del
+/// nombre del campo, que el usuario puede renombrar cuando quiera.
+enum FieldRole {
+  NONE
+  ACTIVITY_ORIGIN // actividad responsable del desvio
+  ACTIVITY_DETECTION // actividad donde se detecto
+  IMPACT // severidad, usada para resaltar en la tabla
+  SPECIES
+  BATCH // lote
+}
+
+model FieldDefinition {
+  id        String    @id @default(cuid())
+  /// Identificador estable con el que viajan los valores en la API.
+  key       String    @unique
+  label     String
+  type      FieldType
+  role      FieldRole @default(NONE)
+  /// Obligatorio para SELECT / MULTISELECT: de que catalogo salen los valores.
+  catalogId String?
+  /// Dependencia en cascada: este campo solo ofrece los hijos del item
+  /// elegido en el campo padre (Problema -> Especificacion).
+  parentFieldId String?
+  helpText  String?
+  required  Boolean   @default(false)
+  /// Si se muestra como columna en la tabla de registros.
+  showInTable Boolean @default(true)
+  order     Int       @default(0)
+  isActive  Boolean   @default(true)
+  /// Los campos de sistema no se borran (las metricas dependen de ellos),
+  /// pero si se renombran y reordenan.
+  isSystem  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  catalog     Catalog?          @relation(fields: [catalogId], references: [id])
+  parentField FieldDefinition?  @relation("FieldCascade", fields: [parentFieldId], references: [id])
+  childFields FieldDefinition[] @relation("FieldCascade")
+  values      DeviationValue[]
+
+  @@index([order])
+  @@map("field_definitions")
+}
+
+// -----------------------------------------------------------------------------
+//  Desvios
+// -----------------------------------------------------------------------------
+
+model Deviation {
+  id   String @id @default(cuid())
+  /// Codigo legible (DEV-0001). Se genera en el servidor de forma atomica
+  /// para que dos usuarios simultaneos no obtengan el mismo numero.
+  code String @unique
+
+  /// Fecha en que el desvio ocurrio realmente.
+  occurredOn DateTime @db.Date
+  /// Fecha en que se detecto / levanto. La diferencia entre ambas es el
+  /// indicador principal del tablero.
+  raisedOn   DateTime @db.Date
+
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User             @relation(fields: [createdById], references: [id])
+  values    DeviationValue[]
+
+  @@index([occurredOn])
+  @@index([raisedOn])
+  @@map("deviations")
+}
+
+/// Valor de un campo dinamico para un desvio.
+/// Se usa la columna que corresponde al tipo del campo; las demas quedan null.
+/// Esto mantiene los datos tipados (y filtrables por SQL) sin recurrir a un
+/// blob JSON indiferenciado.
+model DeviationValue {
+  id          String @id @default(cuid())
+  deviationId String
+  fieldId     String
+
+  valueText   String?
+  valueNumber Float?
+  valueDate   DateTime? @db.Date
+  valueBool   Boolean?
+  /// Para SELECT: el item elegido. Para MULTISELECT se crean varias filas.
+  catalogItemId String?
+
+  deviation   Deviation    @relation(fields: [deviationId], references: [id], onDelete: Cascade)
+  field       FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  catalogItem CatalogItem? @relation(fields: [catalogItemId], references: [id])
+
+  @@index([deviationId])
+  @@index([fieldId])
+  @@index([catalogItemId])
+  @@map("deviation_values")
+}
+
+/// Contador de codigos. Una sola fila; se actualiza con un UPDATE atomico
+/// para generar numeros de desvio sin colisiones.
+model Counter {
+  key   String @id
+  value Int    @default(0)
+
+  @@map("counters")
+}

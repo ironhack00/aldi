@@ -1,0 +1,21 @@
+{
+  "name": "desvios-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Gestion inteligente de desvios - MVP",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/api & npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "db:push": "npm run db:push --workspace=apps/api",
+    "db:seed": "npm run db:seed --workspace=apps/api",
+    "setup": "npm install && npm run db:push && npm run db:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
