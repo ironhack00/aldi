@@ -34,20 +34,28 @@ export function Layout() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-marca-600 p-2 text-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 p-4 sm:gap-4 sm:p-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 rounded-xl bg-marca-600 p-2 text-white">
               <TrendingUp size={20} />
             </div>
-            <div>
-              <h1 className="text-lg font-bold leading-tight">Gestion inteligente de desvios</h1>
-              <p className="text-sm text-slate-500">Insectario · Calidad operativa</p>
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-bold leading-tight sm:text-lg">
+                Gestion inteligente de desvios
+              </h1>
+              {/* El subtitulo es contexto, no informacion: se oculta antes que
+                  comprimir el titulo en un telefono. */}
+              <p className="hidden truncate text-sm text-slate-500 sm:block">
+                Insectario · Calidad operativa
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <div className="text-right">
-              <p className="text-sm font-semibold">{usuario?.name}</p>
+              <p className="hidden max-w-[12ch] truncate text-sm font-semibold sm:block">
+                {usuario?.name}
+              </p>
               <Badge tono="marca">{usuario?.role}</Badge>
             </div>
             <button
@@ -62,7 +70,7 @@ export function Layout() {
       </header>
 
       <nav className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap gap-2 px-5 pb-3">
+        <div className="tira-scroll mx-auto max-w-7xl px-4 pb-3 sm:px-5">
           {items.map(({ to, label, Icono }) => (
             <NavLink
               key={to}
@@ -70,7 +78,7 @@ export function Layout() {
               // `end` solo en la raiz: sin eso "/" quedaria activo en todas.
               end={to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                `tira-item ${
                   isActive
                     ? 'bg-marca-600 text-white'
                     : 'bg-white text-slate-600 hover:bg-marca-50'
@@ -84,7 +92,7 @@ export function Layout() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl p-5">
+      <main className="mx-auto max-w-7xl p-4 sm:p-5">
         <Outlet />
       </main>
     </div>

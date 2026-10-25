@@ -4,16 +4,22 @@
  * Las columnas tambien son dinamicas: se arman con los campos marcados como
  * `showInTable`. Filtros y paginado se resuelven en el servidor, asi la tabla
  * sigue andando con miles de registros.
+ *
+ * Se renderizan dos vistas de los mismos datos y el CSS elige una:
+ *   < lg  -> tarjetas apiladas (TarjetaDesvio)
+ *   >= lg -> tabla
+ * El corte esta en lg (1024px) y no en md porque la tabla pide 900px minimo:
+ * en una tablet vertical entraria, pero scrolleando de costado.
+ * No es duplicacion: una tabla de N columnas dinamicas no entra en un
+ * telefono, y el scroll horizontal esconde justamente la columna que importa.
  */
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { useCampos, useDesvios, useEliminarDesvio } from '../../lib/queries';
 import { Badge, Cargando, MensajeError, Vacio } from '../../components/ui';
-
-/** Impactos que se resaltan en rojo. Se compara por etiqueta porque el
- *  administrador puede renombrar o agregar niveles cuando quiera. */
-const IMPACTOS_CRITICOS = ['alto', 'critico', 'crítico'];
+import { TarjetaDesvio } from './TarjetaDesvio';
+import { ValorCampo } from './ValorCampo';
 
 export function RegistrosPage() {
   const { puede } = useAuth();
@@ -41,14 +47,15 @@ export function RegistrosPage() {
 
   return (
     <div className="tarjeta overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-5">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-4 sm:p-5">
         <div>
           <h2 className="font-bold">Registros</h2>
           <p className="text-sm text-slate-500">{data?.total ?? 0} desvio/s</p>
         </div>
 
-        <form onSubmit={buscar} className="flex items-center gap-2">
-          <div className="relative">
+        {/* En telefono el buscador toma el ancho completo en su propia fila. */}
+        <form onSubmit={buscar} className="flex w-full items-center gap-2 sm:w-auto">
+          <div className="relative min-w-0 flex-1 sm:flex-none">
             <Search size={16} className="absolute left-3 top-3 text-slate-400" />
             <input
               className="input-base pl-9"
@@ -57,7 +64,7 @@ export function RegistrosPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button type="submit" className="boton-secundario">
+          <button type="submit" className="boton-secundario shrink-0">
             Buscar
           </button>
         </form>
@@ -71,8 +78,24 @@ export function RegistrosPage() {
           />
         </div>
       ) : (
-        <div className="overflow-auto">
-          <table className="w-full min-w-[900px] text-sm">
+        <>
+          {/* Telefono: tarjetas apiladas. */}
+          <div className="lg:hidden">
+            {data?.items.map((desvio) => (
+              <TarjetaDesvio
+                key={desvio.id}
+                desvio={desvio}
+                columnas={columnas}
+                campoImpacto={campoImpacto}
+                onEliminar={puede('ADMIN') ? (id) => eliminar.mutate(id) : undefined}
+              />
+            ))}
+          </div>
+
+          {/* Escritorio: tabla. Conserva overflow-x por si el administrador
+              marca muchos campos como visibles y supera los 900px. */}
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full min-w-[900px] text-sm">
             <thead className="bg-slate-50 text-left text-slate-500">
               <tr>
                 <th className="p-3 font-semibold">Codigo</th>
@@ -99,30 +122,14 @@ export function RegistrosPage() {
                     </Badge>
                   </td>
 
-                  {columnas.map((columna) => {
-                    const valor = desvio.values[columna.key];
-                    const esImpacto = campoImpacto?.key === columna.key;
-
-                    return (
-                      <td key={columna.id} className="p-3">
-                        {!valor ? (
-                          <span className="text-slate-300">—</span>
-                        ) : esImpacto ? (
-                          <Badge
-                            tono={
-                              IMPACTOS_CRITICOS.includes(valor.label.toLowerCase())
-                                ? 'rojo'
-                                : 'ambar'
-                            }
-                          >
-                            {valor.label}
-                          </Badge>
-                        ) : (
-                          valor.label
-                        )}
-                      </td>
-                    );
-                  })}
+                  {columnas.map((columna) => (
+                    <td key={columna.id} className="p-3">
+                      <ValorCampo
+                        valor={desvio.values[columna.key]}
+                        esImpacto={campoImpacto?.key === columna.key}
+                      />
+                    </td>
+                  ))}
 
                   {puede('ADMIN') && (
                     <td className="p-3">
@@ -138,12 +145,13 @@ export function RegistrosPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+        </>
       )}
 
       {data && data.totalPages > 1 && (
-        <footer className="flex items-center justify-between border-t border-slate-100 p-4 text-sm">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 p-4 text-sm">
           <span className="text-slate-500">
             Pagina {data.page} de {data.totalPages}
           </span>

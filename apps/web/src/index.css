@@ -29,7 +29,29 @@
            hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  /* `min-w-0` es clave: una tarjeta casi siempre es hija de un grid o un flex,
+     y esos le dan `min-width: auto`, que impide encogerla por debajo del ancho
+     de su contenido. Sin esto el `truncate` de adentro nunca se activa y la
+     tarjeta desborda la pantalla en vez de recortar el texto. */
   .tarjeta {
-    @apply rounded-2xl border border-slate-100 bg-white shadow-sm;
+    @apply min-w-0 rounded-2xl border border-slate-100 bg-white shadow-sm;
+  }
+
+  /* Tira horizontal de botones (navegacion, tabs).
+     En pantallas chicas se desplaza de costado en vez de apilarse en varias
+     filas: tres renglones de navegacion se comen el alto util del telefono.
+     Desde sm vuelve a ser un wrap normal. */
+  .tira-scroll {
+    @apply -mx-1 flex gap-2 overflow-x-auto px-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0;
+    scrollbar-width: none;
+  }
+  .tira-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Item de una .tira-scroll: no se comprime ni parte la etiqueta. */
+  .tira-item {
+    @apply flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5
+           text-sm font-semibold transition sm:px-4;
   }
 }

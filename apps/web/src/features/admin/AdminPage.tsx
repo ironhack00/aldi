@@ -27,12 +27,12 @@ export function AdminPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2">
+      <div className="tira-scroll">
         {TABS.map(({ id, label, Icono }) => (
           <button
             key={id}
             onClick={() => setActiva(id)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+            className={`tira-item ${
               activa === id ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
             }`}
           >

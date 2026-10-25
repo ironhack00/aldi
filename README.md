@@ -204,6 +204,36 @@ También está `apps/api/render.yaml` para crearlo como Blueprint.
 
 ---
 
+## Responsive
+
+La app se usa tanto desde una PC de escritorio como desde el telefono en el
+galpon, asi que cada pantalla tiene que entrar en cualquier ancho.
+
+Dos decisiones que vale la pena conocer antes de tocar el CSS:
+
+- **El listado de registros tiene dos vistas de los mismos datos.** Abajo de
+  `lg` son tarjetas apiladas (`TarjetaDesvio`), arriba es tabla. No es
+  duplicacion por descuido: las columnas son dinamicas (dependen de cuantos
+  campos marque el admin como visibles), asi que la tabla no tiene ancho
+  maximo y en un telefono el scroll horizontal esconde justo la columna que
+  importa. El criterio de formato de cada valor vive en `ValorCampo` y lo
+  comparten las dos vistas.
+- **`.tarjeta` lleva `min-w-0`.** Las tarjetas casi siempre son hijas de un
+  grid o un flex, que les dan `min-width: auto`: sin el `min-w-0` no se pueden
+  encoger por debajo de su contenido, el `truncate` de adentro nunca se activa
+  y la tarjeta desborda la pantalla.
+
+Para verificarlo hay un banco de pruebas que carga cada ruta en iframes de
+varios anchos y avisa si alguna desborda:
+
+```bash
+npm run dev
+# y abrir http://localhost:5173/dev/responsive-check.html
+```
+
+Vive en `apps/web/dev/` y no en `public/` a proposito: asi Vite lo sirve en
+desarrollo pero no lo copia al build de produccion.
+
 ## Seguridad
 
 - **Contraseñas**: hash bcrypt con 12 rondas. Nunca se guarda el texto plano.

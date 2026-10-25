@@ -75,7 +75,9 @@ export function DashboardPage() {
                   </p>
                 </div>
                 {/* Mas de un dia de demora es lo que el negocio quiere atacar. */}
-                <Badge tono={o.dias > 1 ? 'rojo' : 'verde'}>{o.dias} dia/s</Badge>
+                <span className="shrink-0">
+                  <Badge tono={o.dias > 1 ? 'rojo' : 'verde'}>{o.dias} dia/s</Badge>
+                </span>
               </div>
             ))}
           </div>

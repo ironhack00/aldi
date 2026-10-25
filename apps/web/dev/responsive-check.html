@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Banco responsive</title>
+<style>
+ body{margin:0;background:#0f172a;color:#e2e8f0;font:13px/1.6 system-ui;padding:16px}
+ td,th{padding:4px 10px;text-align:left;border-bottom:1px solid #334155}
+ .ok{color:#4ade80}.mal{color:#f87171;font-weight:700}
+ iframe{position:absolute;left:-9999px;top:0;border:0}
+</style></head><body>
+<h2>Desborde horizontal por ruta y ancho</h2>
+<p>Verifica que ninguna pantalla desborde a lo ancho. Abrir con el server de
+desarrollo en <code>/dev/responsive-check.html</code>. Vive fuera de <code>public/</code>
+a proposito: asi Vite lo sirve en desarrollo pero no lo copia al build.</p>
+<table id="t"><thead><tr><th>Ruta</th><th>320</th><th>390</th><th>768</th><th>1024</th></tr></thead><tbody></tbody></table>
+<script>
+const RUTAS = ['/', '/registrar', '/registros', '/analisis', '/admin'];
+const ANCHOS = [320, 390, 768, 1024];
+
+// Carga la ruta en un iframe del ancho pedido y compara el ancho del contenido
+// contra el del viewport: si scrollWidth supera a clientWidth, algo desborda.
+function medir(ruta, ancho) {
+  return new Promise((resolve) => {
+    const f = document.createElement('iframe');
+    f.width = ancho; f.height = 900; f.src = ruta;
+    f.onload = () => setTimeout(() => {
+      const d = f.contentDocument.documentElement;
+      resolve(d.scrollWidth - d.clientWidth);
+      f.remove();
+    }, 900);
+    document.body.appendChild(f);
+  });
+}
+
+(async () => {
+  const tb = document.querySelector('#t tbody');
+  for (const ruta of RUTAS) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${ruta}</td>` + ANCHOS.map(() => '<td>…</td>').join('');
+    tb.appendChild(tr);
+    for (let i = 0; i < ANCHOS.length; i++) {
+      const exceso = await medir(ruta, ANCHOS[i]);
+      const c = tr.children[i + 1];
+      c.className = exceso > 0 ? 'mal' : 'ok';
+      c.textContent = exceso > 0 ? `+${exceso}px` : 'ok';
+    }
+  }
+  document.title = 'LISTO';
+})();
+</script></body></html>

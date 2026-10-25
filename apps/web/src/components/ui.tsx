@@ -145,7 +145,10 @@ export function BarrasHorizontales({
   return (
     <div className="space-y-3">
       {datos.map((d) => (
-        <div key={d.etiqueta} className="grid grid-cols-[100px_1fr_32px] items-center gap-3">
+        <div
+          key={d.etiqueta}
+          className="grid grid-cols-[68px_1fr_28px] items-center gap-2 sm:grid-cols-[100px_1fr_32px] sm:gap-3"
+        >
           <span className="truncate text-sm capitalize text-slate-600" title={d.etiqueta}>
             {d.etiqueta}
           </span>
