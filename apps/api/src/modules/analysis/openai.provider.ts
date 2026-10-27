@@ -11,6 +11,7 @@
  *   AI_PROVIDER=openai
  *   OPENAI_API_KEY=sk-...
  *   OPENAI_MODEL=gpt-4o-mini   (opcional)
+ *   OPENAI_BASE_URL=...        (opcional: Groq, xAI/Grok u otro compatible con OpenAI)
  *
  * Si falta la clave o la llamada falla, contesta el motor local con un aviso
  * adelante: la pantalla nunca queda sin respuesta.
@@ -43,31 +44,23 @@ Reglas:
 
 const TIMEOUT_MS = 30_000;
 
-/** Forma exacta de la respuesta: el frontend muestra answer + evidence. */
-const ESQUEMA_RESPUESTA = {
-  type: 'object',
-  properties: {
-    answer: { type: 'string' },
-    evidence: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          label: { type: 'string' },
-          value: { type: 'string' },
-        },
-        required: ['label', 'value'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['answer', 'evidence'],
-  additionalProperties: false,
-} as const;
+/**
+ * Forma que se le pide al modelo. Se usa `json_object` (y no `json_schema`)
+ * porque es lo que soportan todos los servicios compatibles con OpenAI,
+ * Groq y xAI incluidos; la forma exacta se describe en la instruccion.
+ */
+const FORMATO = `
+Responde SOLO con un objeto JSON con esta forma exacta:
+{"answer": "texto de la respuesta", "evidence": [{"label": "nombre de la cifra", "value": "valor"}]}
+`.trim();
 
 let cliente: OpenAI | null = null;
 const obtenerCliente = (): OpenAI => {
-  cliente ??= new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: TIMEOUT_MS });
+  cliente ??= new OpenAI({
+    apiKey: env.OPENAI_API_KEY,
+    baseURL: env.OPENAI_BASE_URL,
+    timeout: TIMEOUT_MS,
+  });
   return cliente;
 };
 
@@ -93,36 +86,36 @@ export const openaiProvider: AIProvider = {
     }
 
     try {
-      const respuesta = await obtenerCliente().responses.create({
+      const respuesta = await obtenerCliente().chat.completions.create({
         model: env.OPENAI_MODEL,
-        instructions: INSTRUCCION,
-        input: [
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: `${INSTRUCCION}\n\n${FORMATO}` },
           {
             role: 'user',
-            content:
-              `Contexto:\n${JSON.stringify(contexto)}\n\n` + `Pregunta: ${pregunta}`,
+            content: `Contexto:\n${JSON.stringify(contexto)}\n\nPregunta: ${pregunta}`,
           },
         ],
-        text: {
-          format: {
-            type: 'json_schema',
-            name: 'respuesta_analisis',
-            strict: true,
-            schema: ESQUEMA_RESPUESTA,
-          },
-        },
       });
 
-      const texto = respuesta.output_text;
-      if (!texto) throw new Error('OpenAI no devolvio texto');
+      const texto = respuesta.choices[0]?.message.content;
+      if (!texto) throw new Error('El modelo no devolvio texto');
 
-      const datos = JSON.parse(texto) as { answer: string; evidence: { label: string; value: string }[] };
-      if (!datos.answer) throw new Error('OpenAI devolvio una respuesta vacia');
+      const datos = JSON.parse(texto) as { answer?: unknown; evidence?: unknown };
+      if (typeof datos.answer !== 'string' || !datos.answer) {
+        throw new Error('El modelo devolvio una respuesta vacia');
+      }
+      const evidence = Array.isArray(datos.evidence)
+        ? datos.evidence
+            .filter((e): e is { label: unknown; value: unknown } => !!e && typeof e === 'object')
+            .map((e) => ({ label: String(e.label ?? ''), value: String(e.value ?? '') }))
+            .filter((e) => e.label)
+        : [];
 
       return {
         provider: 'openai',
         answer: datos.answer,
-        evidence: datos.evidence.length > 0 ? datos.evidence : undefined,
+        evidence: evidence.length > 0 ? evidence : undefined,
       };
     } catch (error) {
       // Degradacion elegante: nunca se le muestra un error crudo al usuario.

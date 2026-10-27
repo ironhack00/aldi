@@ -1,14 +1,13 @@
 /**
  * Consulta en lenguaje natural sobre los desvios.
  *
- * La pantalla no sabe que motor responde: llama a /api/analysis/ask y muestra
- * lo que vuelve, junto con la evidencia numerica y una etiqueta del motor
- * activo (local o Codex). Cuando Codex quede conectado, esta pantalla no
- * cambia.
+ * La pantalla no sabe ni muestra que motor responde: llama a /api/analysis/ask
+ * y muestra lo que vuelve, junto con la evidencia numerica. Si se cambia el
+ * motor en la API, esta pantalla no cambia.
  */
 import { useState } from 'react';
 import { Bot, Send } from 'lucide-react';
-import { useMotorIA, usePreguntar } from '../../lib/queries';
+import { usePreguntar } from '../../lib/queries';
 import { MensajeError, Tarjeta } from '../../components/ui';
 
 const SUGERENCIAS = [
@@ -17,14 +16,7 @@ const SUGERENCIAS = [
   '¿Cuanto tardamos en detectar los desvios?',
 ];
 
-const NOMBRE_MOTOR: Record<'local' | 'codex' | 'openai', string> = {
-  local: 'local',
-  codex: 'Codex',
-  openai: 'ChatGPT',
-};
-
 export function AnalisisPage() {
-  const { data: motor } = useMotorIA();
   const preguntar = usePreguntar();
   const [pregunta, setPregunta] = useState('');
 
@@ -40,11 +32,6 @@ export function AnalisisPage() {
       <Tarjeta
         titulo="Preguntar a los datos"
         descripcion="Explorá patrones de los desvios registrados."
-        acciones={
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-            Motor: {NOMBRE_MOTOR[motor?.provider ?? 'local']}
-          </span>
-        }
       >
         <form onSubmit={enviar} className="space-y-3">
           <textarea

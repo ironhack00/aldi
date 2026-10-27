@@ -30,6 +30,8 @@ const schema = z.object({
   CODEX_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  /** URL base alternativa: permite usar Groq, xAI (Grok) u otro servicio compatible con OpenAI. */
+  OPENAI_BASE_URL: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
   /** Cuantos desvios recientes se le pasan al motor como muestra. */
   AI_SAMPLE_SIZE: z.coerce.number().int().positive().default(500),
 
