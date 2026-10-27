@@ -70,7 +70,7 @@ export function Layout() {
       </header>
 
       <nav className="border-b border-slate-200 bg-white">
-        <div className="tira-scroll mx-auto max-w-7xl px-4 pb-3 sm:px-5">
+        <div className="tira-scroll mx-auto max-w-7xl px-4 py-3 sm:justify-center sm:px-5">
           {items.map(({ to, label, Icono }) => (
             <NavLink
               key={to}

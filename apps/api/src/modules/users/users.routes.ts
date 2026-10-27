@@ -1,9 +1,9 @@
 /**
  * Endpoints de usuarios: /api/users/* (solo ADMIN).
  *
- * Alcance deliberadamente minimo para el MVP: listar, crear, cambiar rol y
- * activar/desactivar. No hay recuperacion de contrasena ni invitaciones por
- * mail; queda anotado como siguiente paso.
+ * Alcance deliberadamente minimo para el MVP: listar, crear, cambiar rol,
+ * activar/desactivar y borrar. No hay recuperacion de contrasena ni
+ * invitaciones por mail; queda anotado como siguiente paso.
  */
 import type { FastifyPluginAsync } from 'fastify';
 import { Role } from '@prisma/client';
@@ -89,5 +89,32 @@ export const usersRoutes: FastifyPluginAsync = async (app) => {
     }
 
     return { user: aUsuarioPublico(actualizado) };
+  });
+
+  // Borrado fisico, solo para usuarios sin desvios cargados: los desvios
+  // referencian al autor (ON DELETE RESTRICT) y el historial no se toca.
+  // Para esos casos la respuesta es desactivar.
+  app.delete('/:id', async (request) => {
+    const { id } = idParams.parse(request.params);
+
+    if (request.auth!.sub === id) {
+      throw new BadRequestError('No podes eliminar tu propio usuario');
+    }
+
+    const usuario = await prisma.user.findUnique({
+      where: { id },
+      include: { _count: { select: { deviations: true } } },
+    });
+    if (!usuario) throw new NotFoundError('Usuario');
+
+    if (usuario._count.deviations > 0) {
+      throw new ConflictError(
+        `El usuario tiene ${usuario._count.deviations} desvio/s cargados. Desactivalo en lugar de borrarlo para conservar el historial.`,
+      );
+    }
+
+    // Los refresh tokens caen en cascada con el usuario.
+    await prisma.user.delete({ where: { id } });
+    return { eliminado: true };
   });
 };

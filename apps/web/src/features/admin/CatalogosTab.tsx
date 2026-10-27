@@ -11,10 +11,10 @@
  *     un proceso, por eso se edita aparte.
  */
 import { useState } from 'react';
-import { ChevronRight, Plus, Power, Trash2 } from 'lucide-react';
+import { ChevronRight, Plus, Power } from 'lucide-react';
 import { useCatalogo, useCatalogos, useMutarCatalogo } from '../../lib/queries';
 import { ApiError } from '../../lib/api';
-import { Badge, Cargando, MensajeError, Tarjeta, Vacio } from '../../components/ui';
+import { Badge, BotonBorrar, Cargando, MensajeError, Tarjeta, Vacio } from '../../components/ui';
 import type { ItemCatalogo } from '../../types';
 
 export function CatalogosTab() {
@@ -96,6 +96,11 @@ export function CatalogosTab() {
 
   // Items de primer nivel; los hijos se renderizan debajo de cada padre.
   const raices = catalogo?.items.filter((i) => i.parentId === null) ?? [];
+  const posicionesUsadas = (catalogo?.items ?? [])
+    .map((i) => i.flowPosition)
+    .filter((p): p is number => p !== null);
+  const tieneFlujo = posicionesUsadas.length > 0;
+  const siguientePosicion = tieneFlujo ? Math.max(...posicionesUsadas) + 1 : 1;
   const hijosDe = (id: string) => catalogo?.items.filter((i) => i.parentId === id) ?? [];
 
   return (
@@ -167,9 +172,9 @@ export function CatalogosTab() {
             descripcion={catalogo.description ?? undefined}
             acciones={
               !catalogo.isSystem && (
-                <button
-                  className="boton-secundario text-red-600"
-                  onClick={async () => {
+                <BotonBorrar
+                  etiqueta="Eliminar catalogo"
+                  onConfirmar={async () => {
                     setError(null);
                     try {
                       await mutar.eliminarCatalogo.mutateAsync(catalogo.id);
@@ -178,10 +183,7 @@ export function CatalogosTab() {
                       setError(err instanceof ApiError ? err.message : 'No se pudo eliminar');
                     }
                   }}
-                >
-                  <Trash2 size={16} />
-                  Eliminar catalogo
-                </button>
+                />
               )
             }
           >
@@ -207,24 +209,53 @@ export function CatalogosTab() {
             </div>
 
             <form onSubmit={crearItem} className="mt-5 space-y-3 border-t border-slate-100 pt-5">
-              <p className="text-sm font-semibold text-slate-700">Nuevo valor</p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <input
-                  className="input-base sm:col-span-2"
-                  placeholder="Etiqueta"
-                  value={nuevoItem}
-                  onChange={(e) => setNuevoItem(e.target.value)}
-                  required
-                />
-                <input
-                  type="number"
-                  className="input-base"
-                  placeholder="Pos. flujo (opcional)"
-                  title="Posicion en el flujo productivo. Vacio = fuera del flujo secuencial."
-                  value={posicionFlujo}
-                  onChange={(e) => setPosicionFlujo(e.target.value)}
-                />
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Nuevo valor</p>
+                <p className="text-xs text-slate-500">
+                  Agrega una opcion nueva a <strong>{catalogo.name}</strong>. Va a aparecer en los
+                  desplegables de los campos que usan este catalogo.
+                </p>
               </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="block sm:col-span-2">
+                  <span className="mb-1 block text-xs font-medium text-slate-600">Nombre del valor</span>
+                  <input
+                    className="input-base"
+                    placeholder="Ej: Corte, Soldadura, Turno manana"
+                    value={nuevoItem}
+                    onChange={(e) => setNuevoItem(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-slate-600">
+                    Posicion en el flujo{' '}
+                    <span className="font-normal text-slate-400">(opcional)</span>
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    className="input-base"
+                    placeholder={tieneFlujo ? `Sugerido: ${siguientePosicion}` : 'Ej: 1'}
+                    value={posicionFlujo}
+                    onChange={(e) => setPosicionFlujo(e.target.value)}
+                  />
+                </label>
+              </div>
+              <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-500">
+                <strong className="text-slate-600">Posicion en el flujo:</strong> solo aplica a
+                catalogos de etapas del proceso productivo (actividades). Es el orden en que ocurre la
+                etapa: 1 la primera, 2 la siguiente, etc. Sirve para calcular cuantas etapas pasaron
+                entre donde se origino un desvio y donde se detecto. Si el valor no es una etapa, o es
+                un proceso paralelo, dejalo vacio.
+                {tieneFlujo && (
+                  <>
+                    {' '}
+                    Posiciones ya usadas:{' '}
+                    {[...posicionesUsadas].sort((a, b) => a - b).join(', ')}.
+                  </>
+                )}
+              </p>
 
               {catalogo.hierarchical && (
                 <select
@@ -290,13 +321,7 @@ function FilaItem({
         >
           <Power size={15} />
         </button>
-        <button
-          onClick={() => onBorrar(item)}
-          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-          title="Eliminar"
-        >
-          <Trash2 size={15} />
-        </button>
+        <BotonBorrar onConfirmar={() => onBorrar(item)} />
       </div>
     </div>
   );

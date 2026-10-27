@@ -5,8 +5,8 @@
  * como una descripcion de la interfaz y no como una sopa de clases de
  * Tailwind repetidas.
  */
-import type { ReactNode } from 'react';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { AlertCircle, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
 
 type Tono = 'neutro' | 'rojo' | 'ambar' | 'verde' | 'marca';
 
@@ -50,6 +50,93 @@ export function Tarjeta({
       )}
       {children}
     </section>
+  );
+}
+
+/**
+ * Boton de borrar con confirmacion en linea.
+ *
+ * El primer clic no borra: reemplaza el boton por "¿Borrar? Si / No". Si no se
+ * responde en unos segundos vuelve al estado inicial. Se evita `window.confirm`
+ * porque bloquea la pestaña y no se puede estilar.
+ *
+ * Con `etiqueta` se dibuja como boton secundario con texto; sin ella, como
+ * icono chico para listas.
+ */
+export function BotonBorrar({
+  onConfirmar,
+  titulo = 'Eliminar',
+  etiqueta,
+  tamano = 15,
+}: {
+  onConfirmar: () => void;
+  titulo?: string;
+  etiqueta?: string;
+  tamano?: number;
+}) {
+  const [armado, setArmado] = useState(false);
+
+  useEffect(() => {
+    if (!armado) return;
+    const timer = setTimeout(() => setArmado(false), 5000);
+    return () => clearTimeout(timer);
+  }, [armado]);
+
+  const prompt = (
+    <>
+      <span className="font-semibold text-red-700">¿Borrar?</span>
+      <button
+        type="button"
+        onClick={() => {
+          setArmado(false);
+          onConfirmar();
+        }}
+        className="rounded-lg bg-red-600 px-2.5 py-1 font-semibold text-white transition hover:bg-red-700"
+      >
+        Si
+      </button>
+      <button
+        type="button"
+        onClick={() => setArmado(false)}
+        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600 transition hover:bg-slate-50"
+      >
+        No
+      </button>
+    </>
+  );
+
+  if (etiqueta) {
+    return armado ? (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs">{prompt}</span>
+    ) : (
+      <button type="button" className="boton-secundario text-red-600" onClick={() => setArmado(true)}>
+        <Trash2 size={16} />
+        {etiqueta}
+      </button>
+    );
+  }
+
+  // Variante icono: la pregunta flota sobre la fila, anclada al boton, para
+  // no ensanchar la celda (en una tabla con scroll horizontal quedaria
+  // cortada en el borde).
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => setArmado((v) => !v)}
+        className={`rounded-lg p-1.5 transition hover:bg-red-50 hover:text-red-600 ${
+          armado ? 'bg-red-50 text-red-600' : 'text-slate-400'
+        }`}
+        title={titulo}
+      >
+        <Trash2 size={tamano} />
+      </button>
+      {armado && (
+        <span className="absolute right-full top-1/2 z-10 mr-1 flex -translate-y-1/2 items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-2 py-1 text-xs shadow-lg">
+          {prompt}
+        </span>
+      )}
+    </span>
   );
 }
 

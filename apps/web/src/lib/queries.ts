@@ -222,5 +222,9 @@ export function useMutarUsuario() {
         api.patch(`/users/${id}`, datos),
       onSuccess: invalidar,
     }),
+    eliminar: useMutation({
+      mutationFn: (id: string) => api.delete(`/users/${id}`),
+      onSuccess: invalidar,
+    }),
   };
 }

@@ -6,8 +6,7 @@
  * no tiene techo. En un telefono eso es scroll horizontal infinito. Esta
  * tarjeta muestra lo mismo apilado: etiqueta arriba, valor abajo.
  */
-import { Trash2 } from 'lucide-react';
-import { Badge } from '../../components/ui';
+import { Badge, BotonBorrar } from '../../components/ui';
 import { ValorCampo } from './ValorCampo';
 import type { CampoFormulario, Desvio } from '../../types';
 
@@ -39,13 +38,11 @@ export function TarjetaDesvio({
             {desvio.diasHastaDeteccion} dia/s
           </Badge>
           {onEliminar && (
-            <button
-              onClick={() => onEliminar(desvio.id)}
-              className="p-1 text-slate-400 transition hover:text-red-600"
-              title="Eliminar desvio"
-            >
-              <Trash2 size={16} />
-            </button>
+            <BotonBorrar
+              titulo="Eliminar desvio"
+              tamano={16}
+              onConfirmar={() => onEliminar(desvio.id)}
+            />
           )}
         </div>
       </header>

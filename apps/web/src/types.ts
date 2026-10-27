@@ -13,6 +13,7 @@ export interface Usuario {
   email: string;
   name: string;
   role: Role;
+  isActive: boolean;
 }
 
 export type FieldType =
@@ -128,6 +129,6 @@ export interface Oportunidad {
 
 export interface RespuestaAnalisis {
   answer: string;
-  provider: 'local' | 'codex';
+  provider: 'local' | 'codex' | 'openai';
   evidence?: { label: string; value: string }[];
 }

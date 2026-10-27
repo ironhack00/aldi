@@ -14,10 +14,10 @@
  * telefono, y el scroll horizontal esconde justamente la columna que importa.
  */
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { useCampos, useDesvios, useEliminarDesvio } from '../../lib/queries';
-import { Badge, Cargando, MensajeError, Vacio } from '../../components/ui';
+import { Badge, BotonBorrar, Cargando, MensajeError, Vacio } from '../../components/ui';
 import { TarjetaDesvio } from './TarjetaDesvio';
 import { ValorCampo } from './ValorCampo';
 
@@ -133,13 +133,11 @@ export function RegistrosPage() {
 
                   {puede('ADMIN') && (
                     <td className="p-3">
-                      <button
-                        onClick={() => eliminar.mutate(desvio.id)}
-                        className="text-slate-400 transition hover:text-red-600"
-                        title="Eliminar desvio"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <BotonBorrar
+                        titulo="Eliminar desvio"
+                        tamano={16}
+                        onConfirmar={() => eliminar.mutate(desvio.id)}
+                      />
                     </td>
                   )}
                 </tr>

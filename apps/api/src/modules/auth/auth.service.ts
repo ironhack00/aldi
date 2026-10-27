@@ -24,6 +24,7 @@ export interface UsuarioPublico {
   email: string;
   name: string;
   role: Role;
+  isActive: boolean;
 }
 
 export const aUsuarioPublico = (u: User): UsuarioPublico => ({
@@ -31,6 +32,7 @@ export const aUsuarioPublico = (u: User): UsuarioPublico => ({
   email: u.email,
   name: u.name,
   role: u.role,
+  isActive: u.isActive,
 });
 
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');

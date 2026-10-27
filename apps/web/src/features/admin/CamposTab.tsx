@@ -12,10 +12,10 @@
  * metricas.
  */
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, Plus, Power, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Asterisk, Plus } from 'lucide-react';
 import { useCampos, useCatalogos, useMutarCampo } from '../../lib/queries';
 import { ApiError } from '../../lib/api';
-import { Badge, Cargando, MensajeError, Tarjeta, Vacio } from '../../components/ui';
+import { Badge, BotonBorrar, Cargando, MensajeError, Tarjeta, Vacio } from '../../components/ui';
 import type { CampoFormulario, FieldRole, FieldType } from '../../types';
 
 /** Tipos de campo con una explicacion en lenguaje llano. */
@@ -203,18 +203,14 @@ export function CamposTab() {
                           required: !campo.required,
                         })
                       }
-                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100"
-                      title="Alternar obligatorio"
+                      className={`rounded-lg p-1.5 transition hover:bg-slate-100 ${
+                        campo.required ? 'text-red-500' : 'text-slate-400'
+                      }`}
+                      title={campo.required ? 'Quitar obligatorio' : 'Marcar como obligatorio'}
                     >
-                      <Power size={15} />
+                      <Asterisk size={15} />
                     </button>
-                    <button
-                      onClick={() => void borrar(campo)}
-                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                      title="Eliminar"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <BotonBorrar onConfirmar={() => void borrar(campo)} />
                   </div>
                 </div>
               ))}
