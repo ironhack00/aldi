@@ -191,7 +191,7 @@ base de la demo sin ensuciarla.
 1. **New +** → **Web Service**, apuntando al repositorio.
 2. Configuración:
    - **Root Directory**: `apps/api`
-   - **Build Command**: `npm install && npx prisma generate && npm run build`
+   - **Build Command**: `npm install --include=dev && npx prisma generate && npm run build`
    - **Start Command**: `npx prisma migrate deploy && npm run start`
    - **Health Check Path**: `/health`
 3. Variables de entorno:

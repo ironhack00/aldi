@@ -15,7 +15,7 @@ services:
     region: oregon
     # rootDir: la API vive en un subdirectorio del monorepo.
     rootDir: apps/api
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
     # migrate deploy aplica las migraciones pendientes en cada arranque.
     startCommand: npx prisma migrate deploy && npm run start
     healthCheckPath: /health
