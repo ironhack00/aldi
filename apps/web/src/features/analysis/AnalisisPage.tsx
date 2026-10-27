@@ -17,6 +17,12 @@ const SUGERENCIAS = [
   '¿Cuanto tardamos en detectar los desvios?',
 ];
 
+const NOMBRE_MOTOR: Record<'local' | 'codex' | 'openai', string> = {
+  local: 'local',
+  codex: 'Codex',
+  openai: 'ChatGPT',
+};
+
 export function AnalisisPage() {
   const { data: motor } = useMotorIA();
   const preguntar = usePreguntar();
@@ -36,7 +42,7 @@ export function AnalisisPage() {
         descripcion="Explorá patrones de los desvios registrados."
         acciones={
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-            Motor: {motor?.provider === 'codex' ? 'Codex' : 'local'}
+            Motor: {NOMBRE_MOTOR[motor?.provider ?? 'local']}
           </span>
         }
       >

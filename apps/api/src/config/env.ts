@@ -25,9 +25,13 @@ const schema = z.object({
   /** Lista de origenes permitidos, separada por coma. */
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
 
-  AI_PROVIDER: z.enum(['local', 'codex']).default('local'),
+  AI_PROVIDER: z.enum(['local', 'codex', 'openai']).default('local'),
   CODEX_API_URL: z.string().optional(),
   CODEX_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  /** Cuantos desvios recientes se le pasan al motor como muestra. */
+  AI_SAMPLE_SIZE: z.coerce.number().int().positive().default(500),
 
   SEED_PASSWORD: z.string().default('Demo1234!'),
 });

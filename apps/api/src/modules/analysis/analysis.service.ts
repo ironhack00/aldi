@@ -9,14 +9,16 @@ import { formatFechaISO, diferenciaEnDias } from '../../shared/dates.js';
 import { calcularResumen } from '../metrics/metrics.service.js';
 import { localProvider } from './local.provider.js';
 import { codexProvider } from './codex.provider.js';
+import { openaiProvider } from './openai.provider.js';
 import type { AIProvider, ContextoAnalisis, RespuestaAnalisis } from './analysis.types.js';
 
-/** Cuantos desvios se le pasan al motor como muestra. */
-const TAMANO_MUESTRA = 50;
+/** Cuantos desvios se le pasan al motor como muestra (configurable por .env). */
+const TAMANO_MUESTRA = env.AI_SAMPLE_SIZE;
 
 const motores: Record<string, AIProvider> = {
   local: localProvider,
   codex: codexProvider,
+  openai: openaiProvider,
 };
 
 /** Motor activo segun configuracion. */

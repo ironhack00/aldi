@@ -280,7 +280,7 @@ desarrollo pero no lo copia al build de producción.
 ## Módulo de análisis
 
 La pantalla **Análisis** responde preguntas en lenguaje natural sobre los
-desvíos. Está construida sobre una interfaz `AIProvider` con dos
+desvíos. Está construida sobre una interfaz `AIProvider` con tres
 implementaciones:
 
 - **`local`** (activa por defecto) — responde con las métricas reales calculadas
@@ -288,6 +288,20 @@ implementaciones:
   pregunta, encuentra el campo que se está consultando (aunque sea un campo
   creado ayer desde el panel) y responde con la cifra **más la evidencia que la
   respalda**. Si hay empate, lo dice en lugar de elegir un ganador arbitrario.
+
+- **`openai`** — ChatGPT a través de la API de OpenAI. Entiende cualquier
+  pregunta en lenguaje natural y cruza campos entre sí. Para activarlo:
+
+  1. crear una clave en <https://platform.openai.com/api-keys>;
+  2. en el `.env` de la API poner `AI_PROVIDER=openai` y `OPENAI_API_KEY=sk-...`;
+  3. opcionalmente elegir el modelo con `OPENAI_MODEL` (default `gpt-4o-mini`)
+     y cuántos desvíos recientes se le mandan con `AI_SAMPLE_SIZE` (default 500);
+  4. reiniciar la API.
+
+  El modelo solo ve lo que la API le manda: el resumen de métricas sobre toda
+  la base más la muestra de desvíos recientes. Tiene prohibido inventar cifras
+  y devuelve la evidencia numérica junto con la respuesta. Si la clave falta o
+  OpenAI no responde, contesta el motor local con un aviso adelante.
 
 - **`codex`** — el motor de la empresa. **Está escrito pero no conectado**: falta
   el endpoint y las credenciales. Cuando estén:
